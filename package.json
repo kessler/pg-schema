@@ -1,6 +1,6 @@
 {
   "name": "pg-schema",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "validate data against a postgreSQL table",
   "main": "index.js",
   "dependencies": {
