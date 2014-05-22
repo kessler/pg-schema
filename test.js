@@ -1,11 +1,12 @@
 var pgSchema = require('./index')
 var assert = require('assert')
+var validate = require('validate-schema')
 
 describe('pg-schema', function () {
 
-	var tableName = 'aTable'
-	var schemaName = 'aSchema'
-	var databaseName = 'aDatabase'	
+	var tableName = 'atable'
+	var schemaName = 'aschema'
+	var databaseName = 'adatabase'	
 	var resultSet = [
 		{ column_name: 'a', udt_name: 'varchar'},
 		{ column_name: 'b', udt_name: 'varchar'}
@@ -54,6 +55,20 @@ describe('pg-schema', function () {
 			assert.deepEqual(schema, expectedSchema)
 			done()
 		})
+	})
+
+	it('plays well with validate-schema', function () {
+		var schema = pgSchema.createSchemaObject(resultSet, tableName)
+		
+		var object = {}
+		object[tableName] = {}
+		object[tableName].a = 1
+		object[tableName].b = 'b'
+
+		var validation = validate(object, schema)
+		assert.ok(validation)
+		assert.strictEqual(validation['atable.a'], 'string expected')
+		assert.ok(!('atable.b' in validation))
 	})
 })
 

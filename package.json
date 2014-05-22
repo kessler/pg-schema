@@ -7,7 +7,9 @@
     "debug": "^0.8.1",
     "pg-escape": "0.0.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "validate-schema": "0.0.1"
+  },
   "scripts": {
     "test": "mocha"
   },
