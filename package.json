@@ -1,0 +1,29 @@
+{
+  "name": "pg-schema",
+  "version": "0.0.0",
+  "description": "validate data against a postgreSQL table",
+  "main": "index.js",
+  "dependencies": {
+    "debug": "^0.8.1",
+    "pg-escape": "0.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kessler/node-pg-schema"
+  },
+  "keywords": [
+    "postgreSQL",
+    "pg",
+    "postgre"
+  ],
+  "author": "Yaniv Kessler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kessler/node-pg-schema/issues"
+  },
+  "homepage": "https://github.com/kessler/node-pg-schema"
+}
