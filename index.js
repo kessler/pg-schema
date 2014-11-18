@@ -1,5 +1,5 @@
 var pgEscape = require('pg-escape')
-var debug = require('debug')('pg-validate')
+var debug = require('debug')('pg-schema')
 
 module.exports = pgSchema
 module.exports.createQuery = createQuery
@@ -43,7 +43,7 @@ function pgSchema(connection, tableName, schemaName, databaseName, callback) {
 }
 
 function createQuery(table, schema, database) {
-	var sql = 'SELECT udt_name, data_type FROM information_schema.columns WHERE table_name=%L'
+	var sql = 'SELECT column_name, udt_name, data_type FROM information_schema.columns WHERE table_name=%L'
 
 	if (schema && database) {
 		sql += ' AND table_schema=%L AND table_catalog=%L'

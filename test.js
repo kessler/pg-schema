@@ -18,7 +18,7 @@ describe('pg-schema', function () {
 
 	describe('generates an sql query that will be used to obtain column data of a table', function () {
 
-		var expected = 'SELECT udt_name, data_type FROM information_schema.columns WHERE table_name=\'' + tableName + '\''
+		var expected = 'SELECT column_name, udt_name, data_type FROM information_schema.columns WHERE table_name=\'' + tableName + '\''
 
 		it('using the table name', function () {
 			var actual = pgSchema.createQuery(tableName)
