@@ -28,3 +28,6 @@ instead of letting pgSchema run the query, you can run it yourself:
     validate({ mytable: { a: 1 }}, schema)
 ```
 Please note that the schema object does not maintain information about database and database schema. Those are only used when query the meta data tables of the database
+
+TODO:
+- Add an enhanced version with more details (this will not be compatible with pg-validate), maybe in a new module ?
