@@ -13,11 +13,16 @@ function pgSchema(connection, tableName, schemaName, databaseName, callback) {
 	if (!tableName)
 		throw new Error('must provide a table to describe')
 
-	if (typeof(schemaName) === 'function')
+	if (typeof(schemaName) === 'function') {
 		callback = schemaName
+		schemaName = undefined
+		databaseName = undefined
+	}
 
-	if (typeof(databaseName) === 'function')
+	if (typeof(databaseName) === 'function') {
 		callback = databaseName
+		databaseName = undefined
+	}
 
 	if (!callback)
 		throw new Error('must provide a callback')
