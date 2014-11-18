@@ -7,22 +7,10 @@ this module is designed to work with [validate-schema](https://github.com/segmen
 
 ```	
 	var connection = /* anything that exposes a .query('sql', params, function(err, results) {}) interface to a postgresql server */
-
+	var validate = require('validate-schema')
 	var pgSchema = require('pg-schema')
 
-	pgSchema(connection, 'mytable', function(err, schema) {
-
+	pgSchema(connection, 'mytable', function(err, schema) {		
+		console.log(validate({ mytable: { a: 1 }}, schema))
 	})
-
-	// or
-
-	var sql = pgSchema.createQuery('mytable')
-
-	// execute the query yourself and ...
-
-	var schema = pgSchema.createSchema(rows)
-
-	var validate = require('validate-schema')
-
-	console.log(validate({ mytable: { a: 1 }}))
 ```
