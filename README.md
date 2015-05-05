@@ -43,18 +43,5 @@ sometimes you just want a table: { fields } result:
     })
 ```
 
-#### change schema output
-sometimes you just want a table: { fields } result:
-```javascript
-    var connection = /* anything that exposes a .query('sql', params, function(err, results) {}) interface to a postgresql server */
-    var validate = require('validate-schema')
-    var pgSchema = require('pg-schema')
-    
-    pgSchema.simpleFields(true)
-
-    pgSchema(connection, 'mytable' /*,schemaName, databaseName*/, function(err, schema) {       
-        console.log(schema) // { mytable: { a: 'varchar' }}
-    })
-```
 TODO:
 - Add an enhanced version with more details (this will not be compatible with pg-validate), maybe in a new module ?
