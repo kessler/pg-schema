@@ -5,6 +5,11 @@ module.exports = pgSchema
 module.exports.createQuery = createQuery
 module.exports.createSchemaObject = createSchemaObject
 
+var simpleFields = false
+module.exports.simpleFields = function (val) {
+	simpleFields = val
+}
+
 function pgSchema(connection, tableName, schemaName, databaseName, callback) {
 
 	if (!connection)
@@ -68,8 +73,15 @@ function createSchemaObject(resultSet, table) {
 
 	for (var i = 0; i < resultSet.length; i++) {
 		var row = resultSet[i]
+		var key
+		
+		if (simpleFields) {
+			key = row.column_name
+		} else {
+			key = table + '.' + row.column_name
+		}
 
-		schema[table + '.' + row.column_name] = row.udt_name
+		schema[key] = row.udt_name
 	}
 
 	return schema

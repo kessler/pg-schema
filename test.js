@@ -70,6 +70,16 @@ describe('pg-schema', function () {
 		assert.strictEqual(validation['atable.a'], 'string expected')
 		assert.ok(!('atable.b' in validation))
 	})
+
+	it('can output just field keys instead of table.field keys', function () {
+		pgSchema.simpleFields(true)
+		var schema = pgSchema.createSchemaObject(resultSet, tableName)
+		assert.strictEqual(schema.a, 'varchar')
+		assert.strictEqual(schema.b, 'varchar')
+		var fields = Object.keys(schema)
+		assert.strictEqual(fields.length, 2)
+		pgSchema.simpleFields(false)
+	})
 })
 
 function MockConnection(resultSet) {
