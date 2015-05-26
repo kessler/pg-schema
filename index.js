@@ -3,28 +3,38 @@ var debug = require('debug')('pg-schema')
 
 module.exports = pgSchema
 module.exports.createQuery = createQuery
-module.exports.createSchemaObject = createSchemaObject
-
-var simpleFields = false
-module.exports.simpleFields = function (val) {
-	simpleFields = val
-}
+module.exports.createMetadataObject = createMetadataObject
+var informationSchemaFields = module.exports.informationSchemaFields = [
+	'column_name', 
+	'udt_name', 
+	'data_type', 
+	'character_maximum_length',
+	'table_name',
+	'table_schema',
+	'table_catalog',
+	'is_nullable',
+	'numeric_precision'
+]
 
 function pgSchema(connection, tableName, schemaName, databaseName, callback) {
 
 	if (!connection)
 		throw new Error('must provide a connection object')
 
-	if (!tableName)
-		throw new Error('must provide a table to describe')
+	if (typeof (tableName) === 'function') {
+		callback = tableName
+		tableName = undefined
+		schemaName = undefined
+		databaseName = undefined
+	}
 
-	if (typeof(schemaName) === 'function') {
+	if (typeof (schemaName) === 'function') {
 		callback = schemaName
 		schemaName = undefined
 		databaseName = undefined
 	}
 
-	if (typeof(databaseName) === 'function') {
+	if (typeof (databaseName) === 'function') {
 		callback = databaseName
 		databaseName = undefined
 	}
@@ -40,49 +50,76 @@ function pgSchema(connection, tableName, schemaName, databaseName, callback) {
 		if (err) {
 			callback(err)
 		} else {			
-			var schema = createSchemaObject(result.rows, tableName)
+			var schema = createMetadataObject(result.rows)
 			debug(schema)
 			callback(null, schema)	
 		} 
 	})
 }
 
-function createQuery(table, schema, database) {
-	var sql = 'SELECT column_name, udt_name, data_type FROM information_schema.columns WHERE table_name=%L'
+function createQuery(opts) {
+	opts = opts || {}
 
-	if (schema && database) {
-		sql += ' AND table_schema=%L AND table_catalog=%L'
-		return pgEscape(sql, table, schema, database) 
+	var sql = 'SELECT ' + informationSchemaFields.join(',') + ' FROM information_schema.columns'
+
+	var whereClause = []
+	var values = []
+
+	if (opts.table) {
+		whereClause.push('table_name=%L')
+		values.push(opts.table)
+	}
+
+	if (opts.schema) {
+		whereClause.push('table_schema=%L')
+		values.push(opts.schema)
 	} 
 
-	if (schema) {
-		sql += ' AND table_schema=%L'
-		return pgEscape(sql, table, schema)
-	} 
+	if (opts.database) {
+		whereClause.push('table_catalog=%L')
+		values.push(opts.database)
+	}
 
-	if (database) {
-		sql += ' AND table_catalog=%L'
-		return pgEscape(sql, table, database)
-	} 
+	if (whereClause.length > 0) {
+		sql += whereClause.join(' AND ')
+	}
 
-	return pgEscape(sql, table)	
+	return pgEscape.apply(null, [sql].concat(values))
 }
 
-function createSchemaObject(resultSet, table) {
-	var schema = {}
+function createMetadataObject(resultSet) {
+	var metadata = {}
 
 	for (var i = 0; i < resultSet.length; i++) {
 		var row = resultSet[i]
-		var key
 		
-		if (simpleFields) {
-			key = row.column_name
-		} else {
-			key = table + '.' + row.column_name
+		var key = row.column_name
+		var table = row.table_name
+		var schema = row.table_schema
+
+		var database = metadata[row.table_catalog]
+
+		if (!database) {
+			metadata[row.table_catalog] = database = {}
 		}
 
-		schema[key] = row.udt_name
+		var schema = database[row.table_schema]
+
+		if (!schema) {
+			database[row.table_schema] = schema = {}			
+		}
+
+		var table = schema[row.table_name]
+		
+		if (!table) {
+			schema[row.table_name] = table = {}
+		}
+
+		table[key] = {
+			type: row.udt_name,
+			length: row.character_maximum_length ?  row.character_maximum_length : row.numeric_precision
+		}
 	}
 
-	return schema
+	return metadata
 }

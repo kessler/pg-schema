@@ -5,7 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "debug": "^0.8.1",
-    "pg-escape": "0.0.2"
+    "pg-escape": "0.0.2",
+    "should": "^6.0.3"
   },
   "devDependencies": {
     "validate-schema": "0.0.1"

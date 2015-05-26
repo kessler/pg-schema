@@ -1,84 +1,105 @@
 var pgSchema = require('./index')
-var assert = require('assert')
 var validate = require('validate-schema')
+var should = require('should')
 
 describe('pg-schema', function () {
 
-	var tableName = 'atable'
-	var schemaName = 'aschema'
-	var databaseName = 'adatabase'	
+	var sqlBase = 'SELECT ' + pgSchema.informationSchemaFields.join(',') + ' FROM information_schema.columns'
+
 	var resultSet = [
-		{ column_name: 'a', udt_name: 'varchar'},
-		{ column_name: 'b', udt_name: 'varchar'}
+		// two columns for table "atable" in schema "aschema" in db "adb"
+		{ character_maximum_length: 244, column_name: 'a', udt_name: 'varchar', table_name: 'atable', table_schema: 'aschema', table_catalog: 'adb' },
+		{ character_maximum_length: 244, column_name: 'b', udt_name: 'varchar', table_name: 'atable', table_schema: 'aschema', table_catalog: 'adb' },
+
+		// one column for table "btable" in schema "aschama" in db "adb"
+		{ character_maximum_length: 244, column_name: 'a', udt_name: 'varchar', table_name: 'btable', table_schema: 'aschema', table_catalog: 'adb' },
+
+		// one column for table "btable" in schema "bschema" in db "bdb"
+		{ character_maximum_length: 244, column_name: 'a', udt_name: 'varchar', table_name: 'btable', table_schema: 'bschema', table_catalog: 'bdb' }
 	]
 
-	var expectedSchema = {}
-	expectedSchema[tableName + '.a'] = 'varchar'
-	expectedSchema[tableName + '.b'] = 'varchar'
+	describe('creates a query', function () {
 
-	describe('generates an sql query that will be used to obtain column data of a table', function () {
-
-		var expected = 'SELECT column_name, udt_name, data_type FROM information_schema.columns WHERE table_name=\'' + tableName + '\''
-
-		it('using the table name', function () {
-			var actual = pgSchema.createQuery(tableName)
-			
-			assert.strictEqual(actual, expected)
+		it('without restriction', function () {
+			var result = pgSchema.createQuery()
+			result.should.eql(sqlBase)
 		})
 
-		it('using the table name and schema', function () {
-			var actual = pgSchema.createQuery(tableName, schemaName)
-			
-			var schemaExpected = expected + ' AND table_schema=\'' + schemaName + '\''
-
-			assert.strictEqual(actual, schemaExpected)	
+		it('for a specific database', function () {
+			var opts = { database: 'aDatabase' }
+			var result = pgSchema.createQuery(opts)
+			result.should.eql(result, sqlBase + ' AND table_catalog=' + opts.database)
 		})
 
-		it('using the table name and database', function () {
-			var actual = pgSchema.createQuery(tableName, null, databaseName)
+		it('for a specific table', function () {
+			var opts = { table: 'aTable' }
+			var result = pgSchema.createQuery(opts)
+			result.should.eql(result, sqlBase + ' AND table_name=' + opts.table)
+		})
+
+		it('for a specific schema', function () {
+			var opts = { schema: 'aSchema' }
+			var result = pgSchema.createQuery(opts)
+			result.should.eql(result, sqlBase + ' AND table_schema=' + opts.schema)
+		})
+	})
+
+	describe('creates a metadata object from a query result set that contains all', function () {
+		it('the databases', function () {
+			var actual = pgSchema.createMetadataObject(resultSet)
 			
-			var databaseExpected = expected + ' AND table_catalog=\'' + databaseName + '\''
+			actual.should.have.property('adb')
+			actual.should.have.property('bdb')
+		})
 
-			assert.strictEqual(actual, databaseExpected)	
-		})		
+		it('schemas in a database', function () {
+			var actual = pgSchema.createMetadataObject(resultSet)
+			
+			actual.adb.should.have.property('aschema')
+			actual.bdb.should.have.property('bschema')
+		})
+
+		it('tables in each schema', function () {
+			var actual = pgSchema.createMetadataObject(resultSet)
+			
+			actual.adb.aschema.should.have.property('atable')
+			actual.adb.aschema.should.have.property('btable')
+
+			actual.bdb.bschema.should.have.property('btable')
+		})
+
+		it('columns in each table', function () {
+			var actual = pgSchema.createMetadataObject(resultSet)
+			
+			actual.adb.aschema.atable.should.have.property('a')
+			actual.adb.aschema.atable.should.have.property('b')
+			actual.bdb.bschema.btable.should.have.property('a')
+		})
+
+		it('types of data and length for each columns', function () {
+			var actual = pgSchema.createMetadataObject(resultSet)
+			
+			actual.adb.aschema.atable.a.should.have.property('type', 'varchar')
+			actual.adb.aschema.atable.a.should.have.property('length', 244)
+			
+			actual.adb.aschema.atable.b.should.have.property('type', 'varchar')
+			actual.adb.aschema.atable.b.should.have.property('length', 244)
+
+			actual.bdb.bschema.btable.a.should.have.property('type', 'varchar')
+			actual.bdb.bschema.btable.a.should.have.property('length', 244)
+		})
 	})
 
-	it('creates a schema object from a query result set', function () {
-
-		var actual = pgSchema.createSchemaObject(resultSet, tableName)
-
-		assert.deepEqual(actual, expectedSchema)
-	})
-
-	it('queries the database metadata tables and creates a schema object', function (done) {
-		pgSchema(new MockConnection(resultSet), tableName, schemaName, databaseName, function(err, schema) {
-			assert.deepEqual(schema, expectedSchema)
+	it('queries the database metadata tables', function (done) {
+		pgSchema(new MockConnection(resultSet), function(err, metadata) {
+			metadata.should.have.property('adb')
+			.which.have.property('aschema')
+			.which.have.property('atable')
+			.which.have.property('a')
+			.which.have.property('type', 'varchar')
+			
 			done()
 		})
-	})
-
-	it('plays well with validate-schema', function () {
-		var schema = pgSchema.createSchemaObject(resultSet, tableName)
-		
-		var object = {}
-		object[tableName] = {}
-		object[tableName].a = 1
-		object[tableName].b = 'b'
-
-		var validation = validate(object, schema)
-		assert.ok(validation)
-		assert.strictEqual(validation['atable.a'], 'string expected')
-		assert.ok(!('atable.b' in validation))
-	})
-
-	it('can output just field keys instead of table.field keys', function () {
-		pgSchema.simpleFields(true)
-		var schema = pgSchema.createSchemaObject(resultSet, tableName)
-		assert.strictEqual(schema.a, 'varchar')
-		assert.strictEqual(schema.b, 'varchar')
-		var fields = Object.keys(schema)
-		assert.strictEqual(fields.length, 2)
-		pgSchema.simpleFields(false)
 	})
 })
 
