@@ -1,3 +1,5 @@
+# DEPRECATED - Try [pg-metadata](https://github.com/ironsource/node-pg-metadata) instead
+
 pg-schema
 ---------
 
