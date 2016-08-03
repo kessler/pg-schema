@@ -1,3 +1,5 @@
+# DEPRECATED - Try [pg-metadata](https://github.com/ironsource/node-pg-metadata) instead
+
 pg-schema
 ---------
 
@@ -9,7 +11,7 @@ create a schema object by querying the metadata tables of postresql
     var validate = require('validate-schema')
     var pgSchema = require('pg-schema')
 
-    pgSchema(connection, /* tableName, schemaName, databaseName */, function(err, schema) {		
+    pgSchema(connection, /* tableName, schemaName, databaseName */, function(err, schema) {
         
     })
 ```
@@ -37,9 +39,12 @@ sometimes you just want a table: { fields } result:
     
     pgSchema.simpleFields(true)
 
-    pgSchema(connection, 'mytable' /*,schemaName, databaseName*/, function(err, schema) {       
+    pgSchema(connection, 'mytable' /*,schemaName, databaseName*/, function(err, schema) {
         console.log(schema) // { mytable: { a: 'varchar' }}
     })
 ```
 
 Earlier versions of this module were designed to work with [validate-schema](https://github.com/segmentio/validate-schema) in the same way [auto-schema](https://github.com/segmentio/auto-schema) does, but the newer ones is not
+
+TODO:
+- Add an enhanced version with more details (this will not be compatible with pg-validate), maybe in a new module ?
